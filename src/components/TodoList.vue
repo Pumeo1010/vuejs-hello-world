@@ -12,28 +12,13 @@
       enter-active-class="animated fadeInUp"
       leave-active-class="animated fadeOutDown"
     >
-      <div v-for="(todo, index) in todosFiltered" :key="todo.id" class="todo-item">
-        <div class="todo-item-left">
-          <input type="checkbox" v-model="todo.completed" />
-          <div
-            class="todo-item-label"
-            v-if="!todo.editing"
-            @dblclick="editTodo(todo)"
-            :class="{completed:todo.completed}"
-          >{{todo.title}}</div>
-          <input
-            class="todo-item-edit"
-            v-else
-            type="text"
-            v-model="todo.title"
-            v-focus
-            @blur="doneEdit(todo)"
-            @keyup.enter="doneEdit(todo)"
-            @keyup.esc="cancelEdit(todo)"
-          />
-        </div>
-        <div class="remove-item" @click="removeTodo(index)">&times;</div>
-      </div>
+      <todo-item
+        v-for="(todo, index) in todosFiltered"
+        :key="todo.id"
+        :todo="todo"
+        :index="index"
+        :checkAll="!anyRemaining"
+      />
     </transition-group>
 
     <div class="extra-container">
@@ -59,12 +44,17 @@
 </template>
 
 <script>
+import TodoItem from "./TodoItem";
+
 export default {
   name: "todo-list",
+  components: {
+    TodoItem
+  },
   data() {
     return {
       newTodo: "",
-      idNextTodo: 3,
+      idNextTodo: 0,
       beforeEditCache: "",
       filter: "all",
       todos: [
@@ -82,6 +72,14 @@ export default {
         }
       ]
     };
+  },
+  created() {
+    this.$eventBus.$on("removedTodo", index => this.removeTodo(index));
+    this.$eventBus.$on("finishedEdit", data => this.finishedEdit(data));
+  },
+  beforeDestroy() {
+    this.$eventBus.$off("removedTodo");
+    this.$eventBus.$off("finishedEdit");
   },
   computed: {
     remaining() {
@@ -104,26 +102,21 @@ export default {
       return this.todos.filter(item => item.completed).length > 0;
     }
   },
-  directives: {
-    focus: {
-      // directive definition
-      inserted: function(el) {
-        el.focus();
-      }
-    }
-  },
+
   methods: {
     addTodo() {
       if (this.newTodo.trim().length == 0) {
         return;
+      } else if (this.todos[0].indexOf != -1) {
+        this.todos.push({
+          id: this.idNextTodo,
+          title: this.newTodo,
+          completed: false
+        });
+        this.newTodo = "";
+        this.idNextTodo++;
       }
-      this.todos.push({
-        id: this.idNextTodo,
-        title: this.newTodo,
-        completed: false
-      });
-      this.newTodo = "";
-      this.idNextTodo++;
+      //  console.log(todos);
     },
     removeTodo(index) {
       this.todos.splice(index, 1);
@@ -137,6 +130,9 @@ export default {
         todo.title = this.beforeEditCache;
       }
       todo.editing = false;
+    },
+    finishedEdit(data) {
+      this.todos.splice(data.index, 1, data.todo);
     },
     cancelEdit(todo) {
       todo.title = this.beforeEditCache;
@@ -170,6 +166,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  animation-duration: 0.4s;
 }
 
 .remove-item {

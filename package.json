@@ -27,6 +27,9 @@
     "env": {
       "node": true
     },
+    "globals": {
+      "angular": true
+    },
     "extends": [
       "plugin:vue/essential",
       "eslint:recommended"

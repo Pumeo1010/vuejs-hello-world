@@ -21,21 +21,17 @@
     </div>
     <div>
       <button @click="pluralize">Plural</button>
-      <span class="remove-item" @click="removeTodo(index)">&times;</span>
+      <span class="remove-item" @click="removeTodo(todo.id)">&times;</span>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: "todo-item",
+  name: "TodoItem",
   props: {
     todo: {
       type: Object,
-      required: true
-    },
-    index: {
-      type: Number,
       required: true
     },
     checkAll: {
@@ -60,8 +56,11 @@ export default {
       beforeEditCache: ""
     };
   },
-   created() {
-    this.$eventBus.$on("pluralize", this.handlePluralize)
+  created() {
+    this.$eventBus.$on("pluralize", this.handlePluralize);
+  },
+  beforeDestroy() {
+    this.$eventBus.$off("pluralize", this.handlePluralize);
   },
   watch: {
     checkAll() {
@@ -74,8 +73,8 @@ export default {
     }
   },
   methods: {
-    removeTodo(index) {
-      this.$eventBus.$emit("removedTodo", index);
+    removeTodo(id) {
+      this.$eventBus.$emit("removedTodo", id);
     },
     editTodo() {
       this.beforeEditCache = this.title;
@@ -87,13 +86,10 @@ export default {
       }
       this.editing = false;
       this.$eventBus.$emit("finishedEdit", {
-        index: this.index,
-        todo: {
-          id: this.id,
-          title: this.title,
-          completed: this.completed,
-          editing: this.editing
-        }
+        id: this.id,
+        title: this.title,
+        completed: this.completed,
+        editing: this.editing
       });
     },
     cancelEdit() {
@@ -101,18 +97,15 @@ export default {
       this.editing = false;
     },
     pluralize() {
-      this.$eventBus.$emit("pluralize")
+      this.$eventBus.$emit("pluralize");
     },
     handlePluralize() {
-      this.title = this.title + 's';
+      this.title = this.title + "s";
       this.$eventBus.$emit("finishedEdit", {
-        index: this.index,
-        todo: {
-          id: this.id,
-          title: this.title,
-          completed: this.completed,
-          editing: this.editing
-        }
+        id: this.id,
+        title: this.title,
+        completed: this.completed,
+        editing: this.editing
       });
     }
   }
